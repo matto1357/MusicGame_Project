@@ -32,6 +32,7 @@ public enum ScoreIndex
     none = -1,
 
     SIMPLE = 0,
+    LONG, //複合
     LONG_START,
     LONG_END,
     MINE,
@@ -52,6 +53,15 @@ public class STOPS
 public class GIMMICKS
 {
 
+}
+
+public class NotesInfo
+{
+    public int bar;
+    public int th;
+    public int LNend_bar;
+    public int LNend_th;
+    public ScoreIndex type;
 }
 
 /// <summary>
@@ -85,7 +95,23 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public int data_MOVETYPE;
 
     [System.NonSerialized]
-    public Dictionary<ScoreIndex, string> NotesDictionary = new Dictionary<ScoreIndex, string>()
+    public List<NotesInfo>[] data_MusicScore;
+    [System.NonSerialized]
+    public List<int> data_ThPerBar = new List<int>();
+
+    /// <summary>
+    /// ↑(data_MusicScore)を初期化する
+    /// </summary>
+    private void Init_data_MusicScore()
+    {
+        data_MusicScore = new List<NotesInfo>[data_KEY];
+        for (int i = 0; i < data_MusicScore.Length; i++)
+        {
+            data_MusicScore[i] = new List<NotesInfo>();
+        }
+    }
+    
+    private Dictionary<ScoreIndex, string> NotesDictionary = new Dictionary<ScoreIndex, string>()
     {
         {ScoreIndex.none, "0"},
         {ScoreIndex.SIMPLE, "1" },
@@ -94,13 +120,30 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         {ScoreIndex.MINE, "M" },
     };
 
+    public GameObject parentObj;
+    public GameObject notesPrefab;
+
+    public float scoreLengthThumbnail;
+
+    public AudioSource audioSource;
+
+    public float multi;
+
+    private void StartMusic()
+    {
+        audioSource.clip = data_AUDIO;
+        Debug.Log(data_AUDIO);
+        audioSource.Play();
+    }
+
     /// <summary>
-    /// ファイル分解
+    /// 譜面読み込み
     /// </summary>
-    /// <param name="file"></param>
+    /// <param name="file">譜面ファイル</param>
     public void MusicLoad(TextAsset file)
     {
         StringReader sr = new StringReader(file.text);
+
         string lines = null;
         MusicIndex index = MusicIndex.none;
 
@@ -111,9 +154,9 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             string line = sr.ReadLine();
 
             //譜面情報かどうか確認
-            if(lines != null || (line.Length != 0 && line.Substring(0, 1) == "#"))
+            if (lines != null || (line.Length != 0 && line.Substring(0, 1) == "#"))
             {
-                if(index == MusicIndex.none)
+                if (index == MusicIndex.none)
                 {
                     index = CheckIndex(line);
                 }
@@ -125,14 +168,14 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 }
 
                 //タグが無かったら次の行へ
-                if(lines == null && index == MusicIndex.none)
+                if (lines == null && index == MusicIndex.none)
                 {
                     continue;
                 }
 
                 lines += line;
 
-                if(line.Substring(line.Length - 1, 1) == ";")
+                if (line.Substring(line.Length - 1, 1) == ";")
                 {
                     IndexLoad(index, lines, file);
                     lines = null;
@@ -140,8 +183,9 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 }
             }
         }
-
         MakeMusic(sr);
+        GenerateScore();
+        StartMusic();
     }
 
     /// <summary>
@@ -149,21 +193,21 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     /// </summary>
     /// <param name="line">行</param>
     /// <returns></returns>
-    public MusicIndex CheckIndex(string line)
+    private MusicIndex CheckIndex(string line)
     {
         MusicIndex index = MusicIndex.none;
         string str = null;
 
-        for(int i = 0; i < line.Length; i++)
+        for (int i = 0; i < line.Length; i++)
         {
-            if(line.Substring(i, 1) == ":")
+            if (line.Substring(i, 1) == ":")
             {
                 str = str = line.Substring(1, i - 1);
                 break;
             }
         }
 
-        if(str == null)
+        if (str == null)
         {
             Debug.LogWarningFormat("タグを読み込めませんでした : " + line);
             return index;
@@ -185,7 +229,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     /// タグから情報を読み込む
     /// </summary>
     /// <param name="index">タグ</param>
-    public void IndexLoad(MusicIndex index, string line, TextAsset file)
+    private void IndexLoad(MusicIndex index, string line, TextAsset file)
     {
         int tagLength = 1 + index.ToString().Length + 1;
         string contents = line.Substring(tagLength, line.Length - tagLength - 1);
@@ -207,7 +251,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 data_ARTIST = contents;
                 break;
             case MusicIndex.OFFSET:
-                if(contents.Substring(contents.Length - 1, 1) == "f")
+                if (contents.Substring(contents.Length - 1, 1) == "f")
                 {
                     contents = contents.Substring(0, contents.Length - 1);
                 }
@@ -242,15 +286,15 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     /// </summary>
     /// <param name="contents">情報</param>
     /// <returns></returns>
-    public List<BPMS> BreakContents_BPM(string contents)
+    private List<BPMS> BreakContents_BPM(string contents)
     {
         List<BPMS> bpms = new List<BPMS>();
         List<string> breakContents = new List<string>();
         int index = 0;
 
-        for(int i = 0; i < contents.Length; i++)
+        for (int i = 0; i < contents.Length; i++)
         {
-            if(contents.Substring(i, 1) == ",")
+            if (contents.Substring(i, 1) == ",")
             {
                 breakContents.Add(contents.Substring(index, i - index));
                 index = i + 1;
@@ -261,13 +305,14 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
 
         foreach (string str in breakContents)
         {
-            for(int i = 0; i < str.Length; i++)
+            for (int i = 0; i < str.Length; i++)
             {
-                if(str.Substring(i, 1) == "=")
+                if (str.Substring(i, 1) == "=")
                 {
                     BPMS bpm = new BPMS();
                     bpm.Timing = float.Parse(str.Substring(0, i - 1));
                     bpm.BPM = float.Parse(str.Substring(i + 1, str.Length - i - 1));
+                    bpms.Add(bpm);
                     //Debug.Log(bpm.Timing + ":" + bpm.BPM);
                     break;
                 }
@@ -281,7 +326,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     /// 譜面を作るんじゃい
     /// </summary>
     /// <param name="sr">StringReader</param>
-    public void MakeMusic(StringReader sr)
+    private void MakeMusic(StringReader sr)
     {
         //元のデータね
         string data = sr.ReadToEnd();
@@ -290,7 +335,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         //これを入れていくよ
         string score_Bar = null;
 
-        for(int i = 0; i < data.Length; i++)
+        for (int i = 0; i < data.Length; i++)
         {
             string str = data.Substring(i, 1);
 
@@ -299,22 +344,72 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 continue;
             }
 
-            if(str == ",")
+            if (str == "," || str == ";")
             {
                 score_String.Add(score_Bar);
-
-                debug(score_Bar, score_String.Count);
-
                 score_Bar = null;
                 continue;
             }
 
             score_Bar += str;
         }
-        
+
+        Init_data_MusicScore();
+
+        //譜面入れてくよ
+        for(int bar = 0; bar < score_String.Count; bar++)
+        {
+            //--1小節ごと
+            string barStr = score_String[bar];
+            data_ThPerBar.Add(barStr.Length / data_KEY);
+            
+            for(int num = 0; num < barStr.Length; num++)
+            {
+                //--1文字ごと
+                string score = barStr.Substring(num, 1);
+                int key = num % data_KEY;
+                int th = (num - key) / data_KEY;
+                foreach(KeyValuePair<ScoreIndex, string> pair in NotesDictionary)
+                {
+                    if(score == pair.Value)
+                    {
+                        ScoreIndex index = pair.Key;
+
+                        if(index == ScoreIndex.none)
+                        {
+                            break;
+                        }
+
+                        if(index == ScoreIndex.LONG_END)
+                        {
+                            data_MusicScore[key][data_MusicScore[key].Count - 1].type = ScoreIndex.LONG;
+                            data_MusicScore[key][data_MusicScore[key].Count - 1].LNend_bar = bar;
+                            data_MusicScore[key][data_MusicScore[key].Count - 1].LNend_th = th;
+                            break;
+                        }
+
+                        NotesInfo note = new NotesInfo();
+
+                        note.bar = bar;
+                        note.th = th;
+                        note.type = index;
+
+                        data_MusicScore[key].Add(note);
+
+                        //Debug.Log(note.type.ToString() + ":" + (note.bar + 1) + "小節目:" + (note.th + 1) + "分目");
+                        break;
+                    }
+                }
+            }
+        }
     }
 
-    private void debug(string score_Bar, int count)
+    /// <summary>
+    /// 譜面をDebugLogに出力
+    /// </summary>
+    /// <param name="score_Bar">1小節の譜面</param>
+    /// <param name="count">何小節目か</param>
+    private void Debug_MusicScore(string score_Bar, int count)
     {
         int th = score_Bar.Length / data_KEY;
         string tmp = null;
@@ -331,5 +426,27 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         }
 
         Debug.Log(count + ":" + th + "th\n\n" + log);
+    }
+
+    /// <summary>
+    /// 譜面を生成するよ
+    /// </summary>
+    private void GenerateScore()
+    {
+        float time = data_OFFSET;
+        //変速対応はまだ
+        float bpm = data_BPM[0].BPM;
+        float scoreLengthPerBar = bpm / scoreLengthThumbnail;
+        float[] xPos = { -3.0f, -1.0f, 1.0f, 3.0f };
+        for(int x = 0; x < data_MusicScore.Length; x++)
+        {
+            for(int y = 0; y < data_MusicScore[x].Count; y++)
+            {
+                GameObject obj = Instantiate(notesPrefab);
+                obj.transform.SetParent(parentObj.transform);
+                float yPos = scoreLengthPerBar * ((float)data_MusicScore[x][y].bar + (float)data_MusicScore[x][y].th / data_ThPerBar[data_MusicScore[x][y].bar]);
+                obj.transform.localPosition = new Vector3(xPos[x], yPos * multi, 0f);
+            }
+        }
     }
 }
