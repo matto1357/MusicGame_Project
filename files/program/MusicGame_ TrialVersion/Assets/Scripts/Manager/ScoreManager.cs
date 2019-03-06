@@ -7,8 +7,11 @@ using UnityEngine;
 /// </summary>
 public class ScoreManager : SingletonMonoBehaviour<ScoreManager>
 {
+    [SerializeField]
     private int judge_GreatTimes;
+    [SerializeField]
     private int judge_GoodTimes;
+    [SerializeField]
     private int judge_BadTimes;
 
     public void ADDJudge_Great()

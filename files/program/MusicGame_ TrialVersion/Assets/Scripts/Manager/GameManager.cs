@@ -11,13 +11,12 @@ public class GameManager : SingletonMonoBehaviour<GameManager>
 
     private void Start()
     {
-        if(file != null)
-        {
-            MusicManager.instance.MusicLoad(file);
-        }
-        else
+        if(file == null)
         {
             Debug.LogErrorFormat("MusicFile is Null");
+            return;
         }
+
+        MusicManager.instance.MusicLoad(file);
     }
 }

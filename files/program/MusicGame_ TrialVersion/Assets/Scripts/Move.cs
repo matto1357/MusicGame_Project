@@ -5,8 +5,10 @@ using UnityEngine;
 public class Move : MonoBehaviour
 {
     public GameObject parentObj;
+    public AudioSource _audioSource;
 
-    private float time;
+    [System.NonSerialized]
+    public float time;
 
     private float originYPos;
     private float movePerSec = 2.1f / (240f / 210f);
@@ -14,12 +16,11 @@ public class Move : MonoBehaviour
     private void Start()
     {
         originYPos = parentObj.transform.position.y;
-        Debug.Log(movePerSec);
     }
 
     private void FixedUpdate()
     {
-        time += Time.deltaTime;
+        time = _audioSource.time;
         Vector3 pos = parentObj.transform.position;
         pos.y = originYPos - time * movePerSec * MusicManager.instance.multi;
         parentObj.transform.position = pos;
