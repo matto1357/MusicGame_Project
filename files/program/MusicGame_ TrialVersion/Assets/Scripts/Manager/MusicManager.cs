@@ -68,6 +68,7 @@ public class NotesInfo
     public int barOriginTh;
     public int LNend_bar;
     public int LNend_th;
+    public int LNend_barOriginTh;
     public ScoreIndex type;
 }
 
@@ -448,6 +449,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                             data_MusicScore[key][data_MusicScore[key].Count - 1].type = ScoreIndex.LONG;
                             data_MusicScore[key][data_MusicScore[key].Count - 1].LNend_bar = bar;
                             data_MusicScore[key][data_MusicScore[key].Count - 1].LNend_th = th;
+                            data_MusicScore[key][data_MusicScore[key].Count - 1].LNend_barOriginTh = barOriginTh;
                             break;
                         }
 
@@ -503,7 +505,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         //変速対応はまだ
         float bpm = data_BPM[0].BPM;
         float scoreLengthPerBar = bpm / scoreLengthThumbnail;
-        float[] xPos = { -3.0f, -1.0f, 1.0f, 3.0f };
+        float[] xPos = { -7.0f, -5.0f, -3.0f, -1.0f };
         for(int x = 0; x < data_MusicScore.Length; x++)
         {
             for(int y = 0; y < data_MusicScore[x].Count; y++)
@@ -515,9 +517,29 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 NotesScript note = obj.AddComponent<NotesScript>();
 
                 note.notesTiming = 240f / data_BPM[0].BPM * noteBarPos;
+                note.type = data_MusicScore[x][y].type;
                 obj.transform.SetParent(parentObj.transform);
                 float yPos = scoreLengthPerBar * noteBarPos;
                 obj.transform.localPosition = new Vector3(xPos[x], yPos * multi, 0f);
+
+                if (data_MusicScore[x][y].type == ScoreIndex.LONG)
+                {
+                    GameObject obj2 = Instantiate(notesPrefab);
+                    noteBarPos = (float)data_MusicScore[x][y].LNend_bar + (float)data_MusicScore[x][y].LNend_th / (float)data_MusicScore[x][y].LNend_barOriginTh;
+
+                    note.LNendObj = obj2;
+                    note.lr = obj.AddComponent<LineRenderer>();
+
+                    note = obj2.AddComponent<NotesScript>();
+
+                    note.notesTiming = 240f / data_BPM[0].BPM * noteBarPos;
+                    obj2.transform.SetParent(parentObj.transform);
+                    yPos = scoreLengthPerBar * noteBarPos;
+                    obj2.transform.localPosition = new Vector3(xPos[x], yPos * multi, 0f);
+
+                    obj2.transform.SetParent(obj.transform);
+                }
+
                 noteObjects[x].Enqueue(obj);
             }
         }
