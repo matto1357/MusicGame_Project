@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.UI;
 
 /// <summary>
 /// 譜面の各情報
@@ -115,7 +116,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public List<NotesInfo>[] data_MusicScore;
     [System.NonSerialized]
     public Queue<GameObject>[] noteObjects;
-    //[System.NonSerialized]
+    [System.NonSerialized]
     public GameObject[] activeNotes;
     
     private Dictionary<ScoreIndex, string> NotesDictionary = new Dictionary<ScoreIndex, string>()
@@ -131,6 +132,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public Move move;
     public GameObject parentObj;
     public GameObject notesPrefab;
+    public Text difftext;
 
     public float scoreLengthThumbnail;
 
@@ -629,14 +631,16 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         
         float diff = noteInfo.notesTiming - move.time;
 
+        float fixDiff = Mathf.Abs(diff);
+
         JudgeState state = JudgeState.none;
 
         //判定部分
-        if (judgeWidth.JudgeTimings[judgeWidth.JudgeTimings.Length - 1] >= diff)
+        if (judgeWidth.JudgeTimings[judgeWidth.JudgeTimings.Length - 1] >= fixDiff)
         {
             for (int i = 0; i < judgeWidth.JudgeTimings.Length; i++)
             {
-                if (judgeWidth.JudgeTimings[i] >= diff)
+                if (judgeWidth.JudgeTimings[i] >= fixDiff)
                 {
                     switch (i)
                     {
@@ -682,6 +686,8 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 SetActiveNotes(laneNum, state);
                 break;
         }
+
+        difftext.text = diff.ToString("f3");
     }
 
     private void DoNotNotes()
