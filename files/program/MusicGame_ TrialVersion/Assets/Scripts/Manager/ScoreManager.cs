@@ -19,19 +19,35 @@ public class ScoreManager : SingletonMonoBehaviour<ScoreManager>
     public Text goodCount;
     public Text missCount;
 
-    public void ADDJudge_Great()
+    public void AddJudge(JudgeState state)
+    {
+        switch(state)
+        {
+            case JudgeState.Great:
+                AddJudge_Great();
+                break;
+            case JudgeState.Good:
+                AddJudge_Good();
+                break;
+            case JudgeState.Bad:
+                AddJudge_Bad();
+                break;
+        }
+    }
+
+    private void AddJudge_Great()
     {
         judge_GreatTimes++;
         Debug.Log("Great:" + judge_GreatTimes);
     }
 
-    public void AddJudge_Good()
+    private void AddJudge_Good()
     {
         judge_GoodTimes++;
         Debug.Log("Good:" + judge_GoodTimes);
     }
 
-    public void AddJudge_Bad()
+    private void AddJudge_Bad()
     {
         judge_BadTimes++;
         Debug.Log("Bad:" + judge_BadTimes);

@@ -13,6 +13,11 @@ public class NotesScript : MonoBehaviour
     [System.NonSerialized]
     public LineRenderer lr;
 
+    private void Start()
+    {
+        Debug.Log(type + ":" + notesTiming);
+    }
+
     private void Update()
     {
         if(lr != null)

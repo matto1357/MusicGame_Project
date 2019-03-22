@@ -5,53 +5,45 @@ using UnityEngine;
 public class InputManager : SingletonMonoBehaviour<InputManager>
 {
     //レーン毎のデリゲート
-    public delegate void Lane(int num);
+    public delegate void Lane(int num, bool keyState);
 
-    public Lane lane1;
-    public Lane lane2;
-    public Lane lane3;
-    public Lane lane4;
+    public Lane[] lanes;
 
     //キー設定、後に設定可能にする
-    private KeyCode key_Lane1 = KeyCode.Z;
-    private KeyCode key_Lane2 = KeyCode.X;
-    private KeyCode key_Lane3 = KeyCode.C;
-    private KeyCode key_Lane4 = KeyCode.V;
-
-    private void Start()
+    private KeyCode[] key =
     {
-        lane1 += MusicManager.instance.InputKey;
-        lane2 += MusicManager.instance.InputKey;
-        lane3 += MusicManager.instance.InputKey;
-        lane4 += MusicManager.instance.InputKey;
+        KeyCode.Z,
+        KeyCode.X,
+        KeyCode.C,
+        KeyCode.V,
+    };
+
+    public bool[] inputStates;
+
+    private int keyNum;
+
+    public void KeySetting()
+    {
+        keyNum = MusicManager.instance.data_KEY;
+
+        lanes = new Lane[keyNum];
+        inputStates = new bool[keyNum];
+
+        for (int i = 0; i < keyNum; i++)
+        {
+            lanes[i] += MusicManager.instance.InputKey;
+        }
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(key_Lane1))
+        for(int i = 0; i < keyNum; i++)
         {
-            lane1(0);
+            if(Input.GetKey(key[i]) != inputStates[i])
+            {
+                inputStates[i] = !inputStates[i];
+                lanes[i](i, inputStates[i]);
+            }
         }
-        if (Input.GetKeyDown(key_Lane2))
-        {
-            lane2(1);
-        }
-        if (Input.GetKeyDown(key_Lane3))
-        {
-            lane3(2);
-        }
-        if (Input.GetKeyDown(key_Lane4))
-        {
-            lane4(3);
-        }
-    }
-
-    /// <summary>
-    /// 入力できているか確認
-    /// </summary>
-    /// <param name="key">キー</param>
-    private void TestInput(KeyCode key)
-    {
-        Debug.Log(key);
     }
 }

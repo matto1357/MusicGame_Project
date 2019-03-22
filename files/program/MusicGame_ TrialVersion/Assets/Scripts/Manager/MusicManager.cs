@@ -45,6 +45,15 @@ public enum MusicState
     End,
 }
 
+public enum JudgeState
+{
+    none = -1,
+
+    Great = 0,
+    Good,
+    Bad,
+}
+
 public class BPMS
 {
     public float Timing = 0.0f;
@@ -106,7 +115,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public List<NotesInfo>[] data_MusicScore;
     [System.NonSerialized]
     public Queue<GameObject>[] noteObjects;
-    [System.NonSerialized]
+    //[System.NonSerialized]
     public GameObject[] activeNotes;
     
     private Dictionary<ScoreIndex, string> NotesDictionary = new Dictionary<ScoreIndex, string>()
@@ -242,6 +251,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             }
         }
         MakeMusic(sr);
+        InputManager.instance.KeySetting();
         GenerateScore();
         Init_ActiveNotes();
         SetActiveNotesAll();
@@ -532,6 +542,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
 
                     note = obj2.AddComponent<NotesScript>();
 
+                    note.type = ScoreIndex.LONG_END;
                     note.notesTiming = 240f / data_BPM[0].BPM * noteBarPos;
                     obj2.transform.SetParent(parentObj.transform);
                     yPos = scoreLengthPerBar * noteBarPos;
@@ -546,9 +557,42 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     }
 
     //セットするよ
-    public void SetActiveNotes(int laneNum)
+    public void SetActiveNotes(int laneNum, JudgeState judge = JudgeState.none)
     {
-        Destroy(activeNotes[laneNum]);
+        bool LongEnd = false;
+
+        if (activeNotes[laneNum] != null)
+        {
+            NotesScript noteInfo = activeNotes[laneNum].GetComponent<NotesScript>();
+
+            ScoreIndex noteType = noteInfo.type;
+
+            switch (noteType)
+            {
+                case ScoreIndex.SIMPLE:
+                    Destroy(activeNotes[laneNum]);
+                    break;
+                case ScoreIndex.LONG:
+                    if(judge == JudgeState.Bad)
+                    {
+                        Destroy(activeNotes[laneNum]);
+                    }
+                    else
+                    {
+                        LongEnd = true;
+                    }
+                    break;
+                case ScoreIndex.LONG_END:
+                    Destroy(activeNotes[laneNum].transform.parent.gameObject);
+                    break;
+            }
+        }
+
+        if(LongEnd)
+        {
+            activeNotes[laneNum] = activeNotes[laneNum].GetComponent<NotesScript>().LNendObj;
+            return;
+        }
 
         if (noteObjects[laneNum].Count != 0)
         {
@@ -568,16 +612,26 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         }
     }
 
-    public void InputKey(int laneNum)
+    public void InputKey(int laneNum, bool keyState)
     {
         if (activeNotes[laneNum] == null)
         {
             return;
         }
 
-        float diff = Mathf.Abs(activeNotes[laneNum].GetComponent<NotesScript>().notesTiming
-            - move.time);
+        NotesScript noteInfo = activeNotes[laneNum].GetComponent<NotesScript>();
 
+        ScoreIndex type = noteInfo.type;
+        if(keyState == false && type != ScoreIndex.LONG_END)
+        {
+            return;
+        }
+        
+        float diff = noteInfo.notesTiming - move.time;
+
+        JudgeState state = JudgeState.none;
+
+        //判定部分
         if (judgeWidth.JudgeTimings[judgeWidth.JudgeTimings.Length - 1] >= diff)
         {
             for (int i = 0; i < judgeWidth.JudgeTimings.Length; i++)
@@ -587,19 +641,46 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                     switch (i)
                     {
                         case 0:
-                            ScoreManager.instance.ADDJudge_Great();
+                            state = JudgeState.Great;
                             break;
                         case 1:
-                            ScoreManager.instance.AddJudge_Good();
+                            state = JudgeState.Good;
                             break;
                         case 2:
-                            ScoreManager.instance.AddJudge_Bad();
+                            state = JudgeState.Bad;
                             break;
                     }
-                    SetActiveNotes(laneNum);
                     break;
                 }
-            }
+            }   
+        }
+
+        switch (type)
+        {
+            case ScoreIndex.SIMPLE:
+                if (state == JudgeState.none)
+                {
+                    break;
+                }
+                ScoreManager.instance.AddJudge(state);
+                SetActiveNotes(laneNum, state);
+                break;
+            case ScoreIndex.LONG:
+                if (state == JudgeState.none)
+                {
+                    break;
+                }
+                ScoreManager.instance.AddJudge(state);
+                SetActiveNotes(laneNum, state);
+                break;
+            case ScoreIndex.LONG_END:
+                if (state == JudgeState.none)
+                {
+                    state = JudgeState.Bad;
+                }
+                ScoreManager.instance.AddJudge(state);
+                SetActiveNotes(laneNum, state);
+                break;
         }
     }
 
@@ -609,14 +690,14 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         {
             if(activeNotes[i] == null)
             {
-                return;
+                continue;
             }
             float diff = activeNotes[i].GetComponent<NotesScript>().notesTiming
             - move.time;
             if(diff < (judgeWidth.JudgeTimings[judgeWidth.JudgeTimings.Length - 1] * -1.0f))
             {
-                ScoreManager.instance.AddJudge_Bad();
-                SetActiveNotes(i);
+                ScoreManager.instance.AddJudge(JudgeState.Bad);
+                SetActiveNotes(i, JudgeState.Bad);
             }
         }
     }
