@@ -4,9 +4,7 @@ using UnityEngine;
 
 public class NotesScript : MonoBehaviour
 {
-    [System.NonSerialized]
     public ScoreIndex type;
-    [System.NonSerialized]
     public float notesTiming;
     [System.NonSerialized]
     public GameObject LNendObj;

@@ -38,19 +38,19 @@ public class ScoreManager : SingletonMonoBehaviour<ScoreManager>
     private void AddJudge_Great()
     {
         judge_GreatTimes++;
-        Debug.Log("Great:" + judge_GreatTimes);
+        //Debug.Log("Great:" + judge_GreatTimes);
     }
 
     private void AddJudge_Good()
     {
         judge_GoodTimes++;
-        Debug.Log("Good:" + judge_GoodTimes);
+        //Debug.Log("Good:" + judge_GoodTimes);
     }
 
     private void AddJudge_Bad()
     {
         judge_BadTimes++;
-        Debug.Log("Bad:" + judge_BadTimes);
+        //Debug.Log("Bad:" + judge_BadTimes);
     }
 
     private void Update()
