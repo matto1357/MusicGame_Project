@@ -55,6 +55,13 @@ public enum JudgeState
     Bad,
 }
 
+public enum SpeedOption
+{
+    TopSpeed,
+    MaxFit,
+    MinFit,
+}
+
 [System.Serializable]
 public class BPMS
 {
@@ -68,9 +75,17 @@ public class BPMS
     public float currentTime = 0.0f;
 }
 
+[System.Serializable]
 public class STOPS
 {
-    
+    public int   stopTiming_Bar = 0;
+    public int   stopTiming_Th = 0;
+    public int   stopTiming_OriginTh = 0;
+    public float stopTiming = 0.0f;
+    public float stopTiming_Time = 0.0f;
+    public float stopTiming_AfterTime = 0.0f;
+    public float stopTime = 0.0f;
+    public float totalStopTime = 0.0f;
 }
 
 public class GIMMICKS
@@ -105,7 +120,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public string data_ARTIST;
     [System.NonSerialized]
     public float data_OFFSET;
-    //[System.NonSerialized]
+    [System.NonSerialized]
     public List<BPMS> data_BPM = new List<BPMS>();
     [System.NonSerialized]
     public int data_KEY;
@@ -113,7 +128,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public string data_DIFFICULT;
     [System.NonSerialized]
     public int data_LEVEL;
-    //[System.NonSerialized]
+    [System.NonSerialized]
     public List<STOPS> data_STOP = new List<STOPS>();
     [System.NonSerialized]
     public List<GIMMICKS> data_GIMMICK = new List<GIMMICKS>();
@@ -146,7 +161,12 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public AudioSource _audioSource;
     public AudioClip clap;
 
+    [System.NonSerialized]
     public float multi;
+    public SpeedOption option;
+    public float speed;
+    private float maxBPM = 0.0f;
+    private float minBPM = 0.0f;
 
     private MusicState _musicState = MusicState.Start;
     
@@ -198,6 +218,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     private void StartMusic()
     {
         _audioSource.clip = data_AUDIO;
+        _audioSource.time = 0f;
         _audioSource.Play();
     }
 
@@ -218,7 +239,6 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 AutoPlay();
                 break;
         }
-        
     }
 
     /// <summary>
@@ -269,6 +289,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 }
             }
         }
+        SpeedFit();
         MakeMusic(sr);
         InputManager.instance.KeySetting();
         GenerateScore();
@@ -358,7 +379,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 data_LEVEL = int.Parse(contents);
                 break;
             case MusicIndex.STOP:
-                //実装
+                data_STOP = BreakContents_STOP(contents);
                 break;
             case MusicIndex.GIMMICK:
                 //実装
@@ -395,7 +416,6 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         {
             if(str.Contains("=") == false)
             {
-                Debug.Log("BPMの情報おかしいで");
                 break;
             }
 
@@ -417,11 +437,93 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 bpm.changeTiming_Bar = int.Parse(timing);
             }
             bpms.Add(bpm);
+
+            if(minBPM == 0.0f)
+            {
+                minBPM = bpm.BPM;
+            }
+            else if(minBPM > bpm.BPM)
+            {
+                minBPM = bpm.BPM;
+            }
+
+            if(maxBPM == 0.0f)
+            {
+                maxBPM = bpm.BPM;
+            }
+            else if(maxBPM < bpm.BPM)
+            {
+                maxBPM = bpm.BPM;
+            }
         }
         return bpms;
     }
 
-        
+    private List<STOPS> BreakContents_STOP(string contents)
+    {
+        List<STOPS> stops = new List<STOPS>();
+        List<string> breakContents = new List<string>();
+        int index = 0;
+
+        for (int i = 0; i < contents.Length; i++)
+        {
+            if (contents.Substring(i, 1) == ",")
+            {
+                breakContents.Add(contents.Substring(index, i - index));
+                index = i + 1;
+            }
+        }
+
+        breakContents.Add(contents.Substring(index, contents.Length - index));
+
+        foreach (string str in breakContents)
+        {
+            if (str.Contains("=") == false)
+            {
+                break;
+            }
+
+            int equal = str.IndexOf("=");
+            STOPS stop = new STOPS();
+            float stopTime = float.Parse(str.Substring(equal + 1, str.Length - equal - 1));
+
+            stop.stopTime = stopTime;
+
+            string timing = str.Substring(0, equal);
+
+            if (timing.Contains("-"))
+            {
+                int pos = timing.IndexOf("-");
+                stop.stopTiming_Bar = int.Parse(timing.Substring(0, pos));
+                stop.stopTiming_Th = int.Parse(timing.Substring(pos + 1, timing.Length - pos - 1));
+            }
+            else
+            {
+                stop.stopTiming_Bar = int.Parse(timing);
+            }
+            stops.Add(stop);
+            Debug.Log(stop.stopTiming_Bar + ":" + stop.stopTiming_Th + "=" + stop.stopTime);
+        }
+        return stops;
+    }
+
+    private void SpeedFit()
+    {
+        float bpm = 0.0f;
+        switch (option)
+        {
+            case SpeedOption.TopSpeed:
+                bpm = data_BPM[0].BPM;
+                break;
+            case SpeedOption.MaxFit:
+                bpm = maxBPM;
+                break;
+            case SpeedOption.MinFit:
+                bpm = minBPM;
+                break;
+        }
+        multi = speed / bpm;
+    }
 
     /// <summary>
     /// 譜面を作るんじゃい
@@ -469,7 +571,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             int barOriginTh = barStr.Length / data_KEY;
             originThs.Add(barOriginTh);
 
-            //Debug.Log(bar * 4 + "-" + (bar * 4 + 3) + "=" + barOriginTh + "th");
+            //Debug.Log(bar + ":" + bar * 4 + "-" + (bar * 4 + 3) + "=" + barOriginTh + "th");
 
             for (int num = 0; num < barStr.Length; num++)
             {
@@ -518,6 +620,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             }
         }
         BPMData_Add(originThs);
+        STOPData_Add(originThs);
     }
 
     private void BPMData_Add(List<int> data)
@@ -545,6 +648,52 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             data_BPM[i].currentTime = currentTime;
         }
 
+    }
+
+    private void STOPData_Add(List<int> data)
+    {
+        for (int i = 0; i < data_STOP.Count; i++)
+        {
+            data_STOP[i].stopTiming_OriginTh = data[data_STOP[i].stopTiming_Bar];
+            data_STOP[i].stopTiming = data_STOP[i].stopTiming_Bar + 
+                ((float)data_STOP[i].stopTiming_Th / data_STOP[i].stopTiming_OriginTh);
+
+            NotesInfo info = new NotesInfo();
+
+            info.bar = data_STOP[i].stopTiming_Bar;
+            info.th = data_STOP[i].stopTiming_Th;
+            info.barOriginTh = data_STOP[i].stopTiming_OriginTh;
+
+            BPMS bpm = GetBPM(info);
+
+            float afterPos = data_STOP[i].stopTiming;
+            float beforePos = bpm.changeTiming;
+
+            data_STOP[i].stopTiming_Time = bpm.currentTime +
+                240f / bpm.BPM * (afterPos - beforePos);
+
+            data_STOP[i].stopTiming_AfterTime = data_STOP[i].stopTiming_Time + data_STOP[i].stopTime;
+
+            if (i == 0)
+            {
+                continue;
+            }
+
+            data_STOP[i].totalStopTime = data_STOP[i - 1].stopTime + data_STOP[i - 1].totalStopTime;
+            data_STOP[i].stopTiming_Time += data_STOP[i].totalStopTime;
+            data_STOP[i].stopTiming_AfterTime += data_STOP[i].totalStopTime;
+        }
+
+        STOPS addData = new STOPS();
+        addData.stopTiming_Time = float.MaxValue;
+        if (data_STOP.Count == 0)
+        {
+            data_STOP.Add(addData);
+            return;
+        }
+        STOPS basestop = data_STOP[data_STOP.Count - 1];
+        addData.totalStopTime = basestop.totalStopTime + basestop.stopTime;
+        data_STOP.Add(addData);
     }
 
     /// <summary>
@@ -592,11 +741,13 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             {
                 NotesInfo info = data_MusicScore[x][y];
                 BPMS bpm = GetBPM(info);
+                STOPS stop = GetStop(info);
 
                 GameObject obj = Instantiate(notesPrefab);
                 float noteBarPos = (float)info.bar + (float)info.th / (float)info.barOriginTh;
 
                 NotesScript note = obj.AddComponent<NotesScript>();
+                note.stopdata = stop;
 
                 note.notesTiming = bpm.currentTime + 240f / bpm.BPM * (noteBarPos - bpm.changeTiming);
                 note.type = info.type;
@@ -661,6 +812,41 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         }
 
         return bpm;
+    }
+
+    private STOPS GetStop(NotesInfo info, bool isLN = false)
+    {
+        STOPS stop = null;
+
+        float pos = info.bar + ((float)info.th / info.barOriginTh);
+
+        if (isLN)
+        {
+            pos = info.LNend_bar + (info.LNend_th / info.LNend_barOriginTh);
+        }
+
+        for (int i = 0; i < data_STOP.Count; i++)
+        {
+            if(pos <= data_STOP[i].stopTiming)
+            {
+                if(i == 0)
+                {
+                    stop = data_STOP[i];
+                }
+                else
+                {
+                    stop = data_STOP[i/* - 1*/];
+                }
+                break;
+            }
+            stop = data_STOP[i];
+        }
+        if (stop == null)
+        {
+            stop = data_STOP[data_STOP.Count - 1];
+        }
+
+        return stop;
     }
 
     //セットするよ

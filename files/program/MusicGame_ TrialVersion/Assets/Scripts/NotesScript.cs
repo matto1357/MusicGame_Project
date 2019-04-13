@@ -10,6 +10,7 @@ public class NotesScript : MonoBehaviour
     public GameObject LNendObj;
     [System.NonSerialized]
     public LineRenderer lr;
+    public STOPS stopdata;
 
     private void Update()
     {
