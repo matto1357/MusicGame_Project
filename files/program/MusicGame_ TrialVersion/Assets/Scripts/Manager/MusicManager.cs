@@ -73,6 +73,7 @@ public class BPMS
     public float scoreLengthPerBar = 0.0f;
     public float currentLength_Total = 0.0f;
     public float currentTime = 0.0f;
+    public float correctionNum = 1.0f;
 }
 
 [System.Serializable]
@@ -120,7 +121,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public string data_ARTIST;
     [System.NonSerialized]
     public float data_OFFSET;
-    [System.NonSerialized]
+    //[System.NonSerialized]
     public List<BPMS> data_BPM = new List<BPMS>();
     [System.NonSerialized]
     public int data_KEY;
@@ -167,6 +168,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public float speed;
     private float maxBPM = 0.0f;
     private float minBPM = 0.0f;
+    private float standardBPM = 0.0f;
 
     private MusicState _musicState = MusicState.Start;
     
@@ -509,20 +511,19 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
 
     private void SpeedFit()
     {
-        float bpm = 0.0f;
         switch (option)
         {
             case SpeedOption.TopSpeed:
-                bpm = data_BPM[0].BPM;
+                standardBPM = data_BPM[0].BPM;
                 break;
             case SpeedOption.MaxFit:
-                bpm = maxBPM;
+                standardBPM = maxBPM;
                 break;
             case SpeedOption.MinFit:
-                bpm = minBPM;
+                standardBPM = minBPM;
                 break;
         }
-        multi = speed / bpm;
+        multi = speed / standardBPM;
     }
 
     /// <summary>
@@ -631,6 +632,8 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             data_BPM[i].changeTiming = data_BPM[i].changeTiming_Bar +
                 ((float)data_BPM[i].changeTiming_Th / data_BPM[i].changeTiming_OriginTh);
 
+            data_BPM[i].correctionNum = standardBPM / data_BPM[i].BPM;
+
             if (i == 0)
             {
                 continue;
@@ -639,7 +642,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             float afterPos = data_BPM[i].changeTiming;
             float beforePos = data_BPM[i - 1].changeTiming;
 
-            float totalLength = data_BPM[i - 1].scoreLengthPerBar * (afterPos - beforePos);
+            float totalLength = data_BPM[i - 1].scoreLengthPerBar * (afterPos - beforePos) * data_BPM[i - 1].correctionNum;
 
             data_BPM[i].currentLength_Total = totalLength + data_BPM[i - 1].currentLength_Total;
 
@@ -753,7 +756,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 note.type = info.type;
                 obj.transform.SetParent(parentObj.transform);
 
-                float yPos = bpm.currentLength_Total + (noteBarPos - bpm.changeTiming) * bpm.scoreLengthPerBar;
+                float yPos = bpm.currentLength_Total + (noteBarPos - bpm.changeTiming) * bpm.scoreLengthPerBar * bpm.correctionNum;
 
                 obj.transform.localPosition = new Vector3(xPos[x], yPos * multi, 0f);
 
@@ -769,7 +772,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                     note.type = ScoreIndex.LONG_END;
                     note.notesTiming = bpm.currentTime + 240f / bpm.BPM * (noteBarPos - bpm.changeTiming);
                     obj2.transform.SetParent(parentObj.transform);
-                    yPos = bpm.currentLength_Total + (noteBarPos - bpm.changeTiming) * bpm.scoreLengthPerBar;
+                    yPos = bpm.currentLength_Total + (noteBarPos - bpm.changeTiming) * bpm.scoreLengthPerBar * bpm.correctionNum;
 
                     obj2.transform.localPosition = new Vector3(xPos[x], yPos * multi, 0f);
                     obj2.transform.SetParent(obj.transform);

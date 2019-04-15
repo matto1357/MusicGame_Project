@@ -43,18 +43,18 @@ public class MoveManager : SingletonMonoBehaviour<MoveManager>
 
         Vector3 pos = parentObj.transform.position;
         pos.y = originYPos -
-            ((time - currentBPM.currentTime) * movePerSec + currentBPM.currentLength_Total) * 
+            ((time - currentBPM.currentTime) * movePerSec * currentBPM.correctionNum + currentBPM.currentLength_Total) * 
             MusicManager.instance.multi;
         parentObj.transform.position = pos;
 
         if(MusicManager.instance.data_BPM.Count > nextNum_BPM &&
-            /*_audioSource.time - currentSTOP.totalStopTime*/time >= MusicManager.instance.data_BPM[nextNum_BPM].currentTime)
+            time >= MusicManager.instance.data_BPM[nextNum_BPM].currentTime)
         {
             currentBPM = SetBPMS();
         }
 
         if(MusicManager.instance.data_STOP.Count > nextNum_Stop &&
-            _audioSource.time/* - currentSTOP.totalStopTime*/ >= currentSTOP.stopTiming_AfterTime)
+            _audioSource.time >= currentSTOP.stopTiming_AfterTime)
         {
             currentSTOP = SetStops();
         }
