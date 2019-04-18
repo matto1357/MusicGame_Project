@@ -162,10 +162,11 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     public AudioSource _audioSource;
     public AudioClip clap;
 
-    [System.NonSerialized]
+    //[System.NonSerialized]
     public float multi;
     public SpeedOption option;
-    public float speed;
+    public float HS;
+    private float speed;
     private float maxBPM = 0.0f;
     private float minBPM = 0.0f;
     private float standardBPM = 0.0f;
@@ -511,6 +512,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
 
     private void SpeedFit()
     {
+        speed = HS * 100000;
         switch (option)
         {
             case SpeedOption.TopSpeed:
@@ -632,7 +634,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             data_BPM[i].changeTiming = data_BPM[i].changeTiming_Bar +
                 ((float)data_BPM[i].changeTiming_Th / data_BPM[i].changeTiming_OriginTh);
 
-            data_BPM[i].correctionNum = standardBPM / data_BPM[i].BPM;
+            data_BPM[i].correctionNum = standardBPM / data_BPM[i].BPM / data_BPM[i].BPM / (standardBPM / data_BPM[i].BPM);
 
             if (i == 0)
             {

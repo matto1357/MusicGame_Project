@@ -29,7 +29,7 @@ public class MoveManager : SingletonMonoBehaviour<MoveManager>
 
     private void FixedUpdate()
     {
-        time = _audioSource.time;
+        time = _audioSource.time + MusicManager.instance.data_OFFSET;
         float fixTime = time;
         
         if(time >= currentSTOP.stopTiming_Time)
@@ -43,8 +43,8 @@ public class MoveManager : SingletonMonoBehaviour<MoveManager>
 
         Vector3 pos = parentObj.transform.position;
         pos.y = originYPos -
-            ((time - currentBPM.currentTime) * movePerSec * currentBPM.correctionNum + currentBPM.currentLength_Total) * 
-            MusicManager.instance.multi;
+            ((time - currentBPM.currentTime) * movePerSec * currentBPM.correctionNum + currentBPM.currentLength_Total)
+            * MusicManager.instance.multi;
         parentObj.transform.position = pos;
 
         if(MusicManager.instance.data_BPM.Count > nextNum_BPM &&
