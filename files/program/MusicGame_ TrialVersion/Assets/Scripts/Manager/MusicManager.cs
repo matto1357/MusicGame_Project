@@ -28,6 +28,9 @@ public enum MusicIndex
     MOVETYPE,
 }
 
+/// <summary>
+/// ノーツ種類
+/// </summary>
 public enum ScoreIndex
 {
     none = -1,
@@ -39,6 +42,9 @@ public enum ScoreIndex
     MINE,
 }
 
+/// <summary>
+/// 音楽の状態
+/// </summary>
 public enum MusicState
 {
     Start = 0,
@@ -46,8 +52,12 @@ public enum MusicState
     End,
 }
 
+/// <summary>
+/// 判定
+/// </summary>
 public enum JudgeState
 {
+    AUTO = -10,
     none = -1,
 
     Great = 0,
@@ -55,6 +65,9 @@ public enum JudgeState
     Bad,
 }
 
+/// <summary>
+/// ハイスピードオプション
+/// </summary>
 public enum SpeedOption
 {
     TopSpeed,
@@ -62,6 +75,9 @@ public enum SpeedOption
     MinFit,
 }
 
+/// <summary>
+/// BPM管理クラス
+/// </summary>
 [System.Serializable]
 public class BPMS
 {
@@ -76,6 +92,9 @@ public class BPMS
     public float correctionNum = 1.0f;
 }
 
+/// <summary>
+/// 譜面停止管理クラス
+/// </summary>
 [System.Serializable]
 public class STOPS
 {
@@ -89,11 +108,17 @@ public class STOPS
     public float totalStopTime = 0.0f;
 }
 
+/// <summary>
+/// その他ギミック管理クラス
+/// </summary>
 public class GIMMICKS
 {
 
 }
 
+/// <summary>
+/// ノーツ単体の情報管理クラス
+/// </summary>
 public class NotesInfo
 {
     public int bar;
@@ -106,42 +131,95 @@ public class NotesInfo
 }
 
 /// <summary>
-/// 譜面ファイルを読み込む
+/// 譜面ファイルを読み込んで、ベース情報を作成
 /// </summary>
 [DefaultExecutionOrder(-1)]
 public class MusicManager : SingletonMonoBehaviour<MusicManager>
 {
+    //読み込んだ譜面の情報を格納する変数群
+
+    /// <summary>
+    /// 曲タイトル
+    /// </summary>
     [System.NonSerialized]
     public string data_TITLE;
+    /// <summary>
+    /// サブタイトル
+    /// </summary>
     [System.NonSerialized]
     public string data_SUBTITLE;
+    /// <summary>
+    /// 音声ファイル
+    /// </summary>
     [System.NonSerialized]
     public AudioClip data_AUDIO;
+    /// <summary>
+    /// アーティスト名
+    /// </summary>
     [System.NonSerialized]
     public string data_ARTIST;
+    /// <summary>
+    /// 曲オフセット
+    /// </summary>
     [System.NonSerialized]
     public float data_OFFSET;
-    //[System.NonSerialized]
+    /// <summary>
+    /// BPMデータ
+    /// </summary>
+    [System.NonSerialized]
     public List<BPMS> data_BPM = new List<BPMS>();
+    /// <summary>
+    /// レーン数
+    /// </summary>
     [System.NonSerialized]
     public int data_KEY;
+    /// <summary>
+    /// 難易度(文字)
+    /// </summary>
     [System.NonSerialized]
     public string data_DIFFICULT;
+    /// <summary>
+    /// 難易度(数字)
+    /// </summary>
     [System.NonSerialized]
     public int data_LEVEL;
+    /// <summary>
+    /// 譜面停止ギミック
+    /// </summary>
     [System.NonSerialized]
     public List<STOPS> data_STOP = new List<STOPS>();
+    /// <summary>
+    /// その他ギミック
+    /// </summary>
     [System.NonSerialized]
     public List<GIMMICKS> data_GIMMICK = new List<GIMMICKS>();
+    /// <summary>
+    /// 譜面の流れ方
+    /// </summary>
     [System.NonSerialized]
     public int data_MOVETYPE;
+    /// <summary>
+    /// レーン毎に分けたノーツデータ
+    /// </summary>
     [System.NonSerialized]
     public List<NotesInfo>[] data_MusicScore;
+    /// <summary>
+    /// レーン毎に分けたノーツオブジェクト
+    /// </summary>
     [System.NonSerialized]
     public Queue<GameObject>[] noteObjects;
+
+    //ノーツ周り
+
+    /// <summary>
+    /// 次に来るノーツ
+    /// </summary>
     [System.NonSerialized]
     public GameObject[] activeNotes;
-    
+
+    /// <summary>
+    /// ノーツ辞典(ノーツの種類,ノーツ文字)
+    /// </summary>    
     private Dictionary<ScoreIndex, string> NotesDictionary = new Dictionary<ScoreIndex, string>()
     {
         {ScoreIndex.none, "0"},
@@ -151,31 +229,49 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         {ScoreIndex.MINE, "M" },
     };
 
-    public JudgeWidth judgeWidth;
+    /// <summary>
+    /// ノーツ数
+    /// </summary>
+    [System.NonSerialized]
+    public int notesCount = 0;
+
     public MoveManager move;
     public GameObject parentObj;
     public GameObject notesPrefab;
-    public Text difftext;
-
     private float scoreLengthThumbnail = 100.0f;
+
+    //判定周り
+
+    public JudgeWidth judgeWidth;
+
+    //サウンド周り
 
     public AudioSource _audioSource;
     public AudioClip clap;
 
-    //[System.NonSerialized]
-    public float multi;
-    public SpeedOption option;
+    //ハイスピード機能周り
+
+    /// <summary>
+    /// ハイスピの値をここで指定
+    /// </summary>
     public float HS;
+    /// <summary>
+    /// ハイスピの合わせ方
+    /// </summary>
+    public SpeedOption option;
+    [System.NonSerialized]
+    public float multi;  
     private float speed;
     private float maxBPM = 0.0f;
     private float minBPM = 0.0f;
     private float standardBPM = 0.0f;
 
+    //その他
+
     private MusicState _musicState = MusicState.Start;
     
-    /// <summary>
-    /// 初期化関数
-    /// </summary>
+    //初期化関数
+
     private void Init()
     {
         data_TITLE = null;
@@ -192,9 +288,6 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         data_MOVETYPE = 0;
     }
 
-    /// <summary>
-    /// data_MusicScoreを初期化する
-    /// </summary>
     private void Init_data_MusicScore()
     {
         data_MusicScore = new List<NotesInfo>[data_KEY];
@@ -218,6 +311,9 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         activeNotes = new GameObject[data_KEY];
     }
 
+    /// <summary>
+    /// 音楽を再生する
+    /// </summary>
     private void StartMusic()
     {
         _audioSource.clip = data_AUDIO;
@@ -227,12 +323,14 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
 
     private void Update()
     {
+        //スペースキーを押したら音楽を再生する
         bool input = Input.GetKeyDown(KeyCode.Space);
         if (_musicState == MusicState.Start && input)
         {
             _musicState = MusicState.Play;
             StartMusic();
         }
+        //見逃し判定の実行とオートプレイの実行
         switch(GameManager.instance.mode)
         {
             case PlayMode.Normal:
@@ -314,6 +412,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         {
             if (line.Substring(i, 1) == ":")
             {
+                //タグを抽出
                 str = line.Substring(1, i - 1);
                 break;
             }
@@ -597,6 +696,8 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                         {
                             break;
                         }
+
+                        notesCount++;
 
                         if(index == ScoreIndex.LONG_END)
                         {
@@ -962,7 +1063,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 {
                     break;
                 }
-                ScoreManager.instance.AddJudge(state);
+                ScoreManager.instance.AddJudge(state, noteInfo, diff);
                 SetActiveNotes(laneNum, state);
                 break;
             case ScoreIndex.LONG:
@@ -970,7 +1071,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 {
                     break;
                 }
-                ScoreManager.instance.AddJudge(state);
+                ScoreManager.instance.AddJudge(state, noteInfo, diff);
                 SetActiveNotes(laneNum, state);
                 break;
             case ScoreIndex.LONG_END:
@@ -978,12 +1079,10 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 {
                     state = JudgeState.Bad;
                 }
-                ScoreManager.instance.AddJudge(state);
+                ScoreManager.instance.AddJudge(state, noteInfo, diff);
                 SetActiveNotes(laneNum, state);
                 break;
         }
-
-        difftext.text = diff.ToString("f3");
     }
 
     private void DoNotNotes()
@@ -999,11 +1098,11 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             {
                 continue;
             }
-            float diff = activeNotes[i].GetComponent<NotesScript>().notesTiming
-            - move.time;
+            NotesScript note = activeNotes[i].GetComponent<NotesScript>();
+            float diff = note.notesTiming - move.time;
             if(diff < (judgeWidth.JudgeTimings[judgeWidth.JudgeTimings.Length - 1] * -1.0f))
             {
-                ScoreManager.instance.AddJudge(JudgeState.Bad);
+                ScoreManager.instance.AddJudge(JudgeState.Bad, note, diff);
                 SetActiveNotes(i, JudgeState.Bad);
             }
         }
@@ -1026,7 +1125,8 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             - move.time;
             if (diff <= 0.0f)
             {
-                ScoreManager.instance.AddJudge(JudgeState.Bad);
+                NotesScript note = activeNotes[i].GetComponent<NotesScript>();
+                ScoreManager.instance.AddJudge(JudgeState.AUTO, note);
                 SetActiveNotes(i, JudgeState.Bad);
                 _audioSource.PlayOneShot(clap);
             }

@@ -10,7 +10,7 @@ public class InputManager : SingletonMonoBehaviour<InputManager>
     public Lane[] lanes;
 
     //キー設定、後に設定可能にする
-    private KeyCode[] key =
+    public KeyCode[] key =
     {
         KeyCode.Z,
         KeyCode.X,
