@@ -11,6 +11,6 @@ public class MusicData : ScriptableObject
     public void Insert()
     {
         musicSeets[0] = null;
-        //出来てる
+        //TextAssetで保持してみる
     }
 }
