@@ -4,6 +4,18 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
+/// スコア式
+/// </summary>
+public enum ScoreType
+{
+    Add = 0,        //加算
+    Average,        //スコア÷そこまでのノーツ
+    SuddenDeath,    //100%から減算
+    EXScore,        //スコアそのまま
+    EX_MAXMinus,    //理論値ースコア
+}
+
+/// <summary>
 /// 判定数と、それに掛かる物(ゲージ・スコアなど)を管理する
 /// </summary>
 public class ScoreManager : SingletonMonoBehaviour<ScoreManager>
@@ -26,6 +38,8 @@ public class ScoreManager : SingletonMonoBehaviour<ScoreManager>
     public Text scoreCount;
     public Text judgeStr;
     public Text FSStr;
+
+    public ScoreType scoreType;
 
     public void AddJudge(JudgeState state, NotesScript note, float diff = 0.0f)
     {
@@ -146,8 +160,36 @@ public class ScoreManager : SingletonMonoBehaviour<ScoreManager>
         greatCount.text = judge_GreatTimes.ToString();
         goodCount.text = judge_GoodTimes.ToString();
         missCount.text = judge_BadTimes.ToString();
-        float percent = Mathf.Round((float)score / ((float)MusicManager.instance.notesCount * 2f) * 10000f) / 100f;
-        scoreString = percent.ToString("f2");
+        int processedNotes = judge_GreatTimes + judge_GoodTimes + judge_BadTimes;
+
+        float fixScore = 0f;
+        switch (scoreType)
+        {
+            case ScoreType.Add:
+                fixScore = Mathf.Round((float)score / 
+                    ((float)MusicManager.instance.notesData.TotalNotes * 2f) * 10000f) / 100f;
+                scoreString = fixScore.ToString("f2");
+                break;
+            case ScoreType.Average:
+                fixScore = Mathf.Round((float)score / 
+                    ((float)processedNotes * 2f) * 10000f) / 100f;
+                scoreString = fixScore.ToString("f2");
+                break;
+            case ScoreType.SuddenDeath:
+                fixScore = Mathf.Round(10000f - ((float)processedNotes * 2 - (float)score) /
+                    ((float)MusicManager.instance.notesData.TotalNotes * 2f) * 10000f) / 100f;
+                scoreString = fixScore.ToString("f2");
+                break;
+            case ScoreType.EXScore:
+                fixScore = score;
+                scoreString = fixScore.ToString();
+                break;
+            case ScoreType.EX_MAXMinus:
+                fixScore = score - processedNotes * 2;
+                scoreString = fixScore.ToString();
+                break;
+        }
+
         scoreCount.text = scoreString;
     }
 }
