@@ -845,7 +845,6 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                         break;
                     }
                 }
-                Debug.Log(notesCount);
             }
         }
         BPMData_Add(originThs);
