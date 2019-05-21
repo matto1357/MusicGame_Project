@@ -35,8 +35,41 @@ public enum MusicIndex
     LEVEL,
     STOP,
     GIMMICK,
+    GAMETYPE,
     MOVETYPE,
+    GAUGETYPE,
 }
+
+/// <summary>
+/// レーンのレイアウトとか譜面の流れ方とか
+/// </summary>
+public enum GameType
+{
+    Basic = 0,     //上から下に流れるタイプ
+    Step,          //下から上に流れるタイプ(DDR・ギター)
+    Stage,         //スクフェス的なアレ
+    Circle,        //CytusやOsu的なアレ
+}
+
+/// <summary>
+/// ノーツの動き方
+/// </summary>
+public enum MoveType
+{
+    Normal = 0,     //通常タイプ
+    WildlyScroll,   //追い越し可能なタイプ(太鼓の追い越しのイメージ)
+}
+
+/// <summary>
+/// クリアに必要な要素
+/// </summary>
+public enum GaugeType
+{
+    AchievementRate = 0,    //スコアの達成率部分で評価するタイプ(Rb・maimai)
+    GrooveGauge,            //曲終了時にゲージが一定以上でクリア(Bm・Pm)
+    LifeGauge,              //曲終了までゲージを残せばクリア(DDR,Bmハードゲージ)
+}
+
 
 /// <summary>
 /// ノーツ種類
@@ -224,11 +257,13 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     /// </summary>
     [System.NonSerialized]
     public List<GIMMICKS> data_GIMMICK = new List<GIMMICKS>();
+    //[System.NonSerialized]
+    //public int data_
     /// <summary>
     /// 譜面の流れ方
     /// </summary>
     [System.NonSerialized]
-    public int data_MOVETYPE;
+    public MoveType data_MOVETYPE;
     /// <summary>
     /// レーン毎に分けたノーツデータ
     /// </summary>
@@ -535,7 +570,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 //実装
                 break;
             case MusicIndex.MOVETYPE:
-                data_MOVETYPE = int.Parse(contents);
+                data_MOVETYPE = (MoveType)Enum.ToObject(typeof(MoveType), int.Parse(contents));
                 break;
         }
     }
@@ -810,6 +845,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                         break;
                     }
                 }
+                Debug.Log(notesCount);
             }
         }
         BPMData_Add(originThs);
