@@ -777,7 +777,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             int barOriginTh = barStr.Length / data_KEY;
             originThs.Add(barOriginTh);
 
-            //Debug.Log(bar + ":" + bar * 4 + "-" + (bar * 4 + 3) + "=" + barOriginTh + "th");
+            Debug.Log(bar + ":" + bar * 4 + "-" + (bar * 4 + 3) + "=" + barOriginTh + "th");
 
             for (int num = 0; num < barStr.Length; num++)
             {
@@ -1257,7 +1257,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             {
                 NotesScript note = activeNotes[i].GetComponent<NotesScript>();
                 ScoreManager.instance.AddJudge(JudgeState.AUTO, note);
-                SetActiveNotes(i, JudgeState.Bad);
+                SetActiveNotes(i, JudgeState.Great);
                 _audioSource.PlayOneShot(clap);
             }
         }

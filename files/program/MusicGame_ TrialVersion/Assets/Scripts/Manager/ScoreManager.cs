@@ -74,10 +74,6 @@ public class ScoreManager : SingletonMonoBehaviour<ScoreManager>
                 break;
             case JudgeState.AUTO:
                 AddJudge_Great();
-                if(note.type == ScoreIndex.LONG)
-                {
-                    AddJudge_Great();
-                }
                 break;
         }
     }
@@ -117,14 +113,7 @@ public class ScoreManager : SingletonMonoBehaviour<ScoreManager>
                 judgeStr.text = "BAD";
                 break;
             case JudgeState.AUTO:
-                if(note.type == ScoreIndex.LONG)
-                {
-                    combo += 2;
-                }
-                else
-                {
-                    combo++;
-                }
+                combo++;
                 judgeStr.text = "AUTO " + combo.ToString();
                 break;
         }
@@ -141,14 +130,7 @@ public class ScoreManager : SingletonMonoBehaviour<ScoreManager>
                 score += 1;
                 break;
             case JudgeState.AUTO:
-                if(note.type == ScoreIndex.LONG)
-                {
-                    score += 4;
-                }
-                else
-                {
-                    score += 2;
-                }
+                score += 2;
                 break;
             default:
                 break;

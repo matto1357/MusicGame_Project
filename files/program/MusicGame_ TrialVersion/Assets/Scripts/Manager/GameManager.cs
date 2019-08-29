@@ -14,6 +14,14 @@ public enum SeetMode
     JointData,
 }
 
+public enum SceneName
+{
+    Main,
+    MusicSelect,
+    NotesEditor,
+}
+
+
 /// <summary>
 /// 全体の進行管理
 /// </summary>
