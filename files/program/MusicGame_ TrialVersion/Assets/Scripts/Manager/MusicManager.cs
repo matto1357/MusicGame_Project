@@ -331,6 +331,7 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
     private float maxBPM = 0.0f;
     private float minBPM = 0.0f;
     private float standardBPM = 0.0f;
+    private List<int> originThs = new List<int>();
 
     //その他
 
@@ -463,7 +464,6 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 }
             }
         }
-        SpeedFit();
         MakeMusic(sr, mode);
         notesData.TotalNotes = notesData.SimpleNote + notesData.LongNote * 2;
         if (mode != LoadMode.Normal)
@@ -471,6 +471,9 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
             return;
         }
         InputManager.instance.KeySetting();
+        SpeedFit();
+        BPMData_Add(originThs);
+        STOPData_Add(originThs);
         GenerateScore();
         InitActiveNotes();
     }
@@ -724,7 +727,6 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
         List<string> score_String = new List<string>();
         //これを入れていくよ
         string score_Bar = null;
-        List<int> originThs = new List<int>();
         bool isCommentOut = false;
 
         for (int i = 0; i < data.Length; i++)
@@ -847,8 +849,6 @@ public class MusicManager : SingletonMonoBehaviour<MusicManager>
                 }
             }
         }
-        BPMData_Add(originThs);
-        STOPData_Add(originThs);
     }
 
     private void BPMData_Add(List<int> data)
